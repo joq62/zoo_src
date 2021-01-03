@@ -51,17 +51,74 @@ start()->
 %% Returns: non
 %% --------------------------------------------------------------------
 test_1()->
-    io:format("calc:add(20,22) ~p~n",[rpc:call(node(),calc_service,add,[20,22],200)]),
+    case  rpc:call(node(),calc_service,add,[20,22],200) of
+	42->
+	    ok;
+	Reason->
+	    io:format("error calc:add(20,22) ~p~n",[{time(), Reason}])
+    end,
     timer:sleep(5000),
     test_1().
 
+
+
+
+
+monkey_1()->
+    case rand:uniform(2) of
+	1-> % kill host
+	 %   io:format("Kill Host ~p~n",[time()]),
+	    case rpc:call(node(),monkey_lib,candidate_hosts,[],5000) of
+		{badrpc,Reason}->
+		    io:format("badrpc ~p~n",[{time(),Reason}]);
+		[]->
+		    io:format("Too few hosts no action ~p~n",[time()]);
+		{N,Hosts} ->
+		    Position=rand:uniform(N),
+		    HostId=lists:nth(Position,Hosts),
+		    MasterNode=list_to_atom("master@"++HostId),
+		    io:format("{N,Hosts} ~p~n",[{N,Hosts}]),
+		    io:format("Position, HostId, MasterNode ~p~n",[{Position, HostId, MasterNode}]),
+		    rpc:call(MasterNode,init,stop,[],5000),
+		    io:format("MasterNode stopped  ~p~n",[{time(),MasterNode}])
+	    end;
+	2 ->
+ 	    case rpc:call(node(),monkey_lib,candidate_services,[],5000) of
+	    	{badrpc,Reason}->
+		    io:format("badrpc ~p~n",[{time(),Reason}]);
+		[]->
+		    io:format("Too few services no action ~p~n",[time()]);
+		ServiceListAll->
+		    ServiceList=[{XServiceId,XServiceVsn,XN,XVmList}||{XServiceId,XServiceVsn,XN,XVmList}<-ServiceListAll,
+								      XServiceId/="master"],
+		    NumServices=lists:flatlength(ServiceList),
+		    case NumServices of
+			0->
+			   io:format("Too few services no action ~p~n",[time()]);
+			NumServices->
+			    Position=rand:uniform(NumServices),
+			    {ServiceId,_ServiceVsn,N,VmList}=lists:nth(Position,ServiceList),
+			    PositionVm=rand:uniform(N),
+			    Vm=lists:nth(PositionVm,VmList),
+			    
+			    io:format("ServiceList ~p~n",[ServiceList]),
+			    io:format("Position, ServiceId, PositionVm, Vm ~p~n",[{Position, ServiceId, PositionVm, Vm}]),
+			    
+			    rpc:call(Vm,application,stop,[list_to_atom(ServiceId)],5000),
+			    io:format("Application stopped  ~p~n",[{time(),ServiceId,Vm}])
+		    end
+	    end
+    end,
+    TimeToNextAction=10*rand:uniform(12),
+    timer:sleep(TimeToNextAction*1000),
+    monkey_1().
 %% --------------------------------------------------------------------
 %% Function:start/0 
 %% Description: Initiate the eunit tests, set upp needed processes etc
 %% Returns: non
 %% --------------------------------------------------------------------
 setup()->
-  
+    spawn(fun()->monkey_1() end),
     ok.
 
 %% --------------------------------------------------------------------

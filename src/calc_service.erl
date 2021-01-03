@@ -31,8 +31,8 @@
 %% Returns: non
 %% --------------------------------------------------------------------
 add(A,B)->
-    WorkerNodes=net_call(db_sd,get,["calc"],?MasterList),
-    Result=net_call(calc,add,[A,B],WorkerNodes),
+    WorkerNodes=monkey_lib:net_call(db_sd,get,["calc"],?MasterList),
+    Result=monkey_lib:net_call(calc,add,[A,B],WorkerNodes),
     Result.
     
 

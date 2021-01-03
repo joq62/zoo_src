@@ -20,7 +20,8 @@
 %% --------------------------------------------------------------------
 %% External exports
 -export([candidate_hosts/0,
-	 candidate_services/0]).
+	 candidate_services/0,
+	net_call/4]).
 
 %% ====================================================================
 %% External functions
@@ -37,7 +38,7 @@ candidate_hosts()->
     {N,Hosts}=count_hosts(SdReadAll,0,[]),
     Candidates = if
 		     N>1->
-			 Hosts;
+			 {N,Hosts};
 		     true->
 			 []
 		 end,
@@ -60,7 +61,7 @@ count_hosts([{_ServiceId,_ServiceVsn,_AppSpec,_AppSpecVsn,HostId,_VmDir,_VmId,_V
 candidate_services()->
     SdReadAll=net_call(db_sd,read_all,[],?MasterList),
     ServiceCount=count_services(SdReadAll,[]),
-    [{ServiceId,ServiceVsn,VmList}||{ServiceId,ServiceVsn,N,VmList}<-ServiceCount,
+    [{ServiceId,ServiceVsn,N,VmList}||{ServiceId,ServiceVsn,N,VmList}<-ServiceCount,
 				      N>1].
 
 count_services([],ServiceCount)->
