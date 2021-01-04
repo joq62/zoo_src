@@ -32,7 +32,7 @@ start()->
     ?debugMsg("stop setup"),
     
     ?debugMsg("Start test_1"),
-    ?assertEqual(ok,test_1()),
+    ?assertEqual(ok,test_1(ok)),
     ?debugMsg("stop test_1"),
     
    
@@ -50,15 +50,27 @@ start()->
 %% Description: Initiate the eunit tests, set upp needed processes etc
 %% Returns: non
 %% --------------------------------------------------------------------
-test_1()->
+test_1(State)->
     case  rpc:call(node(),calc_service,add,[20,22],5000) of
 	42->
-	    ok;
+	    case State of
+		error->
+		    io:format("calc:add(20,22) = ~p~n",[{time(), 42}]),
+		    NewState=ok;
+		ok->
+		    NewState=State
+	    end;
 	Reason->
-	    io:format("error calc:add(20,22) ~p~n",[{time(), Reason}])
+	    case State of
+		ok->
+		    io:format("Error calc:add(20,22) = ~p~n",[{time(),Reason}]),
+		    NewState=error;
+		error->
+		    NewState=State
+	    end
     end,
     timer:sleep(5000),
-    test_1().
+    test_1(NewState).
 
 
 
@@ -128,7 +140,7 @@ monkey_1()->
 		    io:format("Error in calc_service:add(20,22)  ~p~n",[{CalcAddError}])
 	    end
     end,
-    TimeToNextAction=10*rand:uniform(12),
+    TimeToNextAction=10*rand:uniform(5)+80*1000,
     timer:sleep(TimeToNextAction*1000),
     monkey_1().
 %% --------------------------------------------------------------------
