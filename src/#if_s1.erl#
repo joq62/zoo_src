@@ -48,7 +48,7 @@ add_1(A,B)->
     Value.
 
 add_21(A,B)->
-    Result=case application:get_application(s1) of
+    Re=case application:get_application(s1) of
 	      {ok,_}->
 		  {Time,Value}=timer:tc(rpc,call,[node(),gen_server,call,[s1, {add,A,B},infinity],5000]),
 		  io:format("rpc check node node()  time  ~p~n",[Time]),		      

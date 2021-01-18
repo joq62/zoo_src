@@ -66,6 +66,8 @@ test_1()->
     io:format("add_3 time  ~p~n",[Time]),		      
     42=if_s1:add_1(20,22),
     42=if_s1:add_2(20,22), 
+    42=if_s1:add_21(20,22), 
+    42=if_s1:add_2(20,22), 
     42=if_s1:add_3(20,22),
     42=if_s1:add_4(20,22),
  
